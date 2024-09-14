@@ -1178,7 +1178,7 @@ if __name__ == '__main__':
     from utils import save_df
     fileid = int(sys.argv[1])
     mc_df_paths = sorted(MC_DF_PATH.iterdir())
-    mc_df_paths = [p if p.name.startswith('mc_202007') or p.name.startswith('mc_202008') for p in mc_df_paths]
+#    mc_df_paths = [p if p.name.startswith('mc_202007') or p.name.startswith('mc_202008') for p in mc_df_paths]
     ev_df_pkl = mc_df_paths[fileid]
     print('Reconstructing ' + ev_df_pkl.name)
     df = pd.read_pickle(ev_df_pkl)

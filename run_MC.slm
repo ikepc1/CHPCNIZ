@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --account=bergman
+#SBATCH --partition=notchpeak
+#SBATCH --time=5:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=64
+#SBATCH -J mc
+#SBATCH -o /uufs/chpc.utah.edu/common/home/u0790821/outputs/mc-%A-%a.out
+#SBATCH -e /uufs/chpc.utah.edu/common/home/u0790821/outputs/mc-%A-%a.err
+
+echo Beginning job on `hostname` on `date`
+echo Job number $SLURM_JOB_ID
+echo Running on nodes: $SLURM_NODELIST
+
+srun --multi-prog run_MC.conf
+
+echo Job completed on `date`.

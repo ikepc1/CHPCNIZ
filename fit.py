@@ -849,8 +849,8 @@ def make_guess(ty: TyroFit, pf: NichePlane, cfg: CounterConfig) -> list[FitParam
     '''
     corez = cfg.counter_bottom[2]
     parlist = [
-        FitParam('Xmax', 480., (360., 900.), 50.),
-        FitParam('Nmax', 4.5e4, (1.e4, 1.e7), 1.e5),
+        FitParam('Xmax', 480., (300., 900.), 50.),
+        FitParam('Nmax', 1.e5, (1.e4, 1.e7), 1.e5),
         FitParam('zenith', pf.theta, (0., pf.theta +.1), np.deg2rad(1.)),
         FitParam('azimuth', pf.phi, (pf.phi -.1, pf.phi +.1), np.deg2rad(1.)),
         FitParam('corex',ty.core_estimate[0],ty.xlimits, 5.),

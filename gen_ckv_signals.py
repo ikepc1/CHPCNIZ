@@ -118,7 +118,7 @@ def cut_photon_zeniths(sig: ch.ShowerSignal, max_zenith = np.pi/2) -> np.ndarray
     '''This function sets the value of each photon bunch arriving with a zenith
     angle greater than max_zenith to zero.
     '''
-    survival_fractions = filter(np.arccos(sig.cos_theta))
+    survival_fractions = filter(np.arccos(sig.cos_theta)) * sig.cos_theta
     sig.photons[sig.cos_theta[:,np.newaxis,:] < np.cos(max_zenith)] = 0.
     return sig.photons * survival_fractions
 

@@ -1124,7 +1124,7 @@ def empty_row(cfg: CounterConfig) -> dict:
     row['config'] = cfg
     return row
 
-def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 5) -> pd.DataFrame:
+def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 6) -> pd.DataFrame:
     '''This function fits each event in the dataframe and adds them to a new datframe 
     of the same shape.
     '''
@@ -1153,8 +1153,11 @@ def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 5) -> pd.DataFrame:
         #fit if there are at least the requested number of triggered counters
         if len(nfits) >= min_multiplicity:
             fp = FitProcedure(cfg,nfits)
-            guess = fp.fit_procedure(make_guess(row['Fit'],row['Plane_Fit'],cfg))
-            # guess = fp.minimal_fit_procedure(make_guess(row['Fit'],row['Plane_Fit'],cfg))
+            tries = 0
+            #fit until chi2 is less than 100
+            while fp.chi2ndof > 100. or tries < 3:
+                guess = fp.fit_procedure(make_guess(row['Fit'],row['Plane_Fit'],cfg))
+                tries += 1
             for par in guess:
                 if par.name in new_row:
                     new_row[par.name] = par.value
@@ -1178,12 +1181,12 @@ if __name__ == '__main__':
     from utils import save_df
     fileid = int(sys.argv[1])
     mc_df_paths = sorted(MC_DF_PATH.iterdir())
-#    mc_df_paths = [p if p.name.startswith('mc_202007') or p.name.startswith('mc_202008') for p in mc_df_paths]
+    mc_df_paths = [p for p in mc_df_paths if p.name.startswith('mc')]
     ev_df_pkl = mc_df_paths[fileid]
     print('Reconstructing ' + ev_df_pkl.name)
     df = pd.read_pickle(ev_df_pkl)
     fit_df = dataframe_fit(df)
-    save_df(fit_df,'fit_' + ev_df_pkl.name, ev_df_pkl.parent)
+    save_df(fit_df,'minfit_' + ev_df_pkl.name, ev_df_pkl.parent)
 
 
 

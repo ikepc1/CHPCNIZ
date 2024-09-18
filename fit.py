@@ -1186,7 +1186,7 @@ if __name__ == '__main__':
     print('Reconstructing ' + ev_df_pkl.name)
     df = pd.read_pickle(ev_df_pkl)
     fit_df = dataframe_fit(df)
-    save_df(fit_df,'minfit_' + ev_df_pkl.name, ev_df_pkl.parent)
+    save_df(fit_df,'fit_' + ev_df_pkl.name, ev_df_pkl.parent)
 
 
 

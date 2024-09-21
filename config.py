@@ -9,6 +9,7 @@ from atmosphere import CorsikaAtmosphere, Atmosphere
 RAW_DATA_PATH = Path('/scratch/general/nfs1/u0790821/niche_data/')
 NIZ_DIRECTORY = Path('/uufs/chpc.utah.edu/common/home/u0790821/NIZ/')
 NIGHTSKY_DF_PATH = Path('/scratch/general/nfs1/u0790821/nightsky_dfs/')
+ALL_NS_DATA_PATH = Path('/scratch/general/nfs1/u0790821/all_nightsky_dfs/')
 MC_DF_PATH = Path('/scratch/general/nfs1/u0790821/mc_dfs/')
 SHOWLIB_PATH = Path('/scratch/general/nfs1/u0790821/showlib/')
 

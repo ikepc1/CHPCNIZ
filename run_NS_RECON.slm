@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=owner-guest
 #SBATCH --partition=notchpeak-guest
-#SBATCH --time=48:00:00
+#SBATCH --time=36:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=64
 #SBATCH -J mc
@@ -12,6 +12,7 @@ echo Beginning job on `hostname` on `date`
 echo Job number $SLURM_JOB_ID
 echo Running on nodes: $SLURM_NODELIST
 
-srun --multi-prog run_RECON.conf
+srun --multi-prog run_NS_RECON.conf
 
 echo Job completed on `date`.
+

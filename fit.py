@@ -1,6 +1,7 @@
 from iminuit import Minuit
 from iminuit.cost import LeastSquares
 from scipy.optimize import curve_fit
+from scipy.interpolate import LinearNDInterpolator
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field
@@ -847,10 +848,18 @@ class FitParam:
 def make_guess(ty: TyroFit, pf: NichePlane, cfg: CounterConfig) -> list[FitParam]:
     '''This function makes a guess for the fit parameters.
     '''
+    n_of_z_a = np.load('n_of_z_pa.npz')
+    nguesser = LinearNDInterpolator(list(zip(n_of_z_a['agrid'].flatten(), n_of_z_a['zgrid'].flatten())), n_of_z_a['log10nmax'].flatten())
+    logmeanpa = np.log10(np.array([f.intsignal for f in pf.counters]).mean())
+    nguess = 10**float(nguesser(logmeanpa, pf.theta))
+    if np.isnan(nguess):
+        nguess = 1.e5
+    elif nguess < 1.e4 or nguess > 1.e7:
+        nguess = 1.e5
     corez = cfg.counter_bottom[2]
     parlist = [
         FitParam('Xmax', 480., (300., 900.), 50.),
-        FitParam('Nmax', 1.e5, (1.e4, 1.e7), 1.e5),
+        FitParam('Nmax', nguess, (1.e4, 1.e7), 1.e5),
         FitParam('zenith', pf.theta, (0., pf.theta +.1), np.deg2rad(1.)),
         FitParam('azimuth', pf.phi, (pf.phi -.1, pf.phi +.1), np.deg2rad(1.)),
         FitParam('corex',ty.core_estimate[0],ty.xlimits, 5.),
@@ -1153,11 +1162,16 @@ def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 6) -> pd.DataFrame:
         #fit if there are at least the requested number of triggered counters
         if len(nfits) >= min_multiplicity:
             fp = FitProcedure(cfg,nfits)
+            guess = make_guess(row['Fit'],row['Plane_Fit'],cfg)
             tries = 0
             #fit until chi2 is less than 100
-            while fp.chi2ndof > 100. or tries < 3:
-                guess = fp.fit_procedure(make_guess(row['Fit'],row['Plane_Fit'],cfg))
-                tries += 1
+            while fp.chi2ndof > 100. and tries < 2:
+                try:
+                    guess = fp.fit_procedure(guess)
+                    tries += 1
+                except:
+                    dictlist.append(new_row)
+                    continue
             for par in guess:
                 if par.name in new_row:
                     new_row[par.name] = par.value

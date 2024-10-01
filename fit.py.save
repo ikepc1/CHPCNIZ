@@ -1140,14 +1140,12 @@ def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 6) -> pd.DataFrame:
     #new list to store rows in
     dictlist = []
 
-    #loop throw events in input dataframe
+    #loop through events in input dataframe
     for _, row in df.iterrows():
         cfg = row['config']
         new_row = empty_row(cfg)
         new_row['chi2'] = None
         nfits = row[cfg.active_counters][row[cfg.active_counters].notna()].to_list()
-        #exclude weird counters
-        #nfits = [f for f in nfits if f.name not in ['bardeen','bell','curie','rubin']]
         for nfit in nfits:
             new_row[nfit.name] = nfit
 

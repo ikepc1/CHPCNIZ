@@ -4,7 +4,7 @@
 #SBATCH --time=36:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=64
-#SBATCH -J mc
+#SBATCH -J ns_recon
 #SBATCH -o /uufs/chpc.utah.edu/common/home/u0790821/outputs/mc-%A-%a.out
 #SBATCH -e /uufs/chpc.utah.edu/common/home/u0790821/outputs/mc-%A-%a.err
 

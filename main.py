@@ -135,6 +135,7 @@ if __name__  == '__main__':
         print(f'Processing {ns_df_pkl.name[:-4]}...')
         n = n_events * N_THROWN_PER_NS_EVENT
         print(f'Throwing {n} events...')
+        ns_df_pkl.unlink()
         mc_df = main(ns_df_pkl.name[:-4], n, bad_dets)
         save_df(mc_df, target_filename, MC_DF_PATH)
-        ns_df_pkl.unlink()
+        #ns_df_pkl.unlink()

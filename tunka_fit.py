@@ -4,7 +4,7 @@ from scipy.integrate import quad, trapz
 class TunkaPMTPulse:
     '''This class normalizes the Tunka pmt pulse functional form as a pdf'''
 
-    def __init__(self, t0=0., pk=1., rt=8., ft=16., bl=0.):
+    def __init__(self, t0=0., pk=1., rt=6., ft=12., bl=0.):
         self.C0 = 1.
         self.t0 = t0
         self.pk = pk
@@ -16,11 +16,11 @@ class TunkaPMTPulse:
 
     @property
     def ll(self):
-        return self.t0 - 10.
+        return self.t0 - 20.
 
     @property
     def ul(self):
-        return self.t0 + 10.
+        return self.t0 + 30.
 
     def tunka_fit(self, t: np.ndarray) -> np.ndarray:
         """

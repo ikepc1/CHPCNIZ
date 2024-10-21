@@ -689,7 +689,7 @@ class TimesWidthsAreas(FitFeature):
 def start_rise(f: NicheFit) -> int:
     '''This function returns the start of the interesting part of the waveform.
     '''
-    level = (f.waveform.max() - f.baseline) / 4. + f.baseline
+    level = (f.waveform.max() - f.baseline) / 20. + f.baseline
     peak = f.waveform.argmax()
     before_reversed = f.waveform[:peak][::-1]
     n_samples_before = (before_reversed<level).argmax()
@@ -697,7 +697,7 @@ def start_rise(f: NicheFit) -> int:
     return istart
 
 def end_fall(f: NicheFit) -> int:
-    level = (f.waveform.max() - f.baseline) / 4. + f.baseline
+    level = (f.waveform.max() - f.baseline) / 20. + f.baseline
     peak = f.waveform.argmax()
     after = f.waveform[peak:]
     n_samples_after = (after<level).argmax()
@@ -708,6 +708,14 @@ class AllSamples(FitFeature):
     wf_cushion = 4
     wf_start = TRIGGER_POSITION - wf_cushion
     wf_end = TRIGGER_POSITION + wf_cushion
+
+    def __init__(self, nfits: list[NicheFit], param_mapper: ParamMapper, cfg: CounterConfig) -> None:
+        pas = np.array([f.intsignal for f in nfits])
+        nfit_arr = np.array(nfits)
+        self.nfits = nfit_arr[np.argsort(pas)][-3:].tolist()
+        self.param_mapper = param_mapper
+        self.cfg = cfg
+        self.target_parameters = []
 
     @cached_property
     def biggest_trig2peak_diff(self) -> float:
@@ -733,8 +741,7 @@ class AllSamples(FitFeature):
 
     @cached_property
     def real_times_array(self) -> list[np.ndarray]:
-        '''
-        '''
+        ''''''
         return [self.get_real_times(f)[start_rise(f):end_fall(f)] for f in self.nfits]
 
     @cached_property
@@ -788,6 +795,15 @@ class AllSamples(FitFeature):
         return np.hstack(wfs_at_real_times)
     
 class Samples(FitFeature):
+
+    def __init__(self, nfits: list[NicheFit], param_mapper: ParamMapper, cfg: CounterConfig) -> None:
+        pas = np.array([f.intsignal for f in nfits])
+        nfit_arr = np.array(nfits)
+        self.nfits = nfit_arr[np.argsort(pas)][-3:].tolist()
+        self.param_mapper = param_mapper
+        self.cfg = cfg
+        self.target_parameters = []
+
     @cached_property
     def real_inputs(self) -> np.ndarray:
         return np.arange(len(self.real_values))
@@ -815,6 +831,12 @@ class Samples(FitFeature):
     def error(self) -> np.ndarray:
         stacked_errs = []
         for f in self.nfits:
+            # f_errs = np.full(self.endi_dict[f.name]+self.starti_dict[f.name],f.baseline_error)
+            # im = f.waveform.argmax()
+            # f_errs /= (f.waveform-f.baseline)[im - self.starti_dict[f.name]:im + self.endi_dict[f.name]]
+            # # im = f.waveform.argmax()
+            # # f_errs[f.waveform[im - self.starti_dict[f.name]:im + self.endi_dict[f.name]].argmax()] /= 10.
+            # stacked_errs.extend(f_errs.tolist())
             stacked_errs.extend(np.full(self.endi_dict[f.name]+self.starti_dict[f.name],f.baseline_error).tolist())
         return np.array(stacked_errs)
     
@@ -853,13 +875,12 @@ def make_guess(ty: TyroFit, pf: NichePlane, cfg: CounterConfig) -> list[FitParam
     logmeanpa = np.log10(np.array([f.intsignal for f in pf.counters]).mean())
     nguess = 10**float(nguesser(logmeanpa, pf.theta))
     if np.isnan(nguess):
-        nguess = 1.e5
-    elif nguess < 1.e4 or nguess > 1.e7:
-        nguess = 1.e5
+        nguess = 1.e6
+    # nguess = 1.e5
     corez = cfg.counter_bottom[2]
     parlist = [
-        FitParam('Xmax', 480., (300., 900.), 50.),
-        FitParam('Nmax', nguess, (1.e4, 1.e7), 1.e5),
+        FitParam('Xmax', 550., (100., 900.), 50.),
+        FitParam('Nmax', nguess, (1.e4, 1.e8), 1.e5),
         FitParam('zenith', pf.theta, (0., pf.theta +.1), np.deg2rad(1.)),
         FitParam('azimuth', pf.phi, (pf.phi -.1, pf.phi +.1), np.deg2rad(1.)),
         FitParam('corex',ty.core_estimate[0],ty.xlimits, 5.),
@@ -1003,12 +1024,19 @@ def update_guess_values(guess: list[FitParam], m: Minuit) -> list[FitParam]:
     return [FitParam(p.name,p.value,(p.lower_limit, p.upper_limit),gp.error,gp.fixed) for p, gp in zip(m.params,guess)]
 
 class FitProcedure:
+    n_of_z_a = np.load('n_of_z_pa.npz')
+    nguesser = LinearNDInterpolator(list(zip(n_of_z_a['agrid'].flatten(), n_of_z_a['zgrid'].flatten())), n_of_z_a['log10nmax'].flatten())
 
     def __init__(self, cfg: CounterConfig, nfits: list[NicheFit]) -> None:
         self.cfg = cfg
         self.nfits = nfits
+        self.meanpa = np.log10(np.array([f.intsignal for f in nfits]).mean())
         self.chi2ndof = 1.e10
-        
+
+    def n_of_a_guess(self, theta: float) -> float:
+        '''This method guesses the nmax based on a given theta and the average event pulse areas.
+        '''
+        return 10**self.nguesser(self.meanpa, theta)
 
     def fit_procedure(self, guess: list[FitParam]) -> list[FitParam]:
         '''This function is the full procedure for fitting a NICHE event.
@@ -1032,27 +1060,27 @@ class FitProcedure:
         # m = init_minuit(pa, guess)
         # m.simplex(ncall=20)
 
-        guess = update_guess_values(guess, m)
-        pa = NormalizedPulseArea(self.nfits, BasicParams, self.cfg)
-        pa.target_parameters = ['Xmax','Nmax','corex','corey']
-        m = init_minuit(pa, guess)
-        m.simplex()
-
-        # nmaxguess = update_guess(m)
-        # pa = PulseArea(self.nfits, BasicParams, self.cfg)
-        # pa.target_parameters = ['Xmax','Nmax']
-        # m = init_minuit(pa, nmaxguess)
-        # m.tol = .01
+        # guess = update_guess_values(guess, m)
+        # pa = NormalizedPulseArea(self.nfits, BasicParams, self.cfg)
+        # pa.target_parameters = ['Xmax','Nmax','corex','corey']
+        # m = init_minuit(pa, guess)
+        # # m.values['Nmax'] = self.n_of_a_guess(m.values['zenith'])
         # m.simplex()
 
-        # guess = update_guess(m)
-        # at = AllTunka(self.nfits, BasicParams, self.cfg)
-        # at.target_parameters = ['t_offset']
-        # m = init_minuit(at, guess)
-        # m.migrad()
+        nmaxguess = update_guess(m)
+        pa = PulseArea(self.nfits, BasicParams, self.cfg)
+        pa.target_parameters = ['Xmax','Nmax','corex','corey']
+        m = init_minuit(pa, nmaxguess)
+        m.simplex(ncall=400)
 
         guess = update_guess(m)
-        at = Samples(self.nfits, BasicParams, self.cfg)
+        at = AllTunka(self.nfits, BasicParams, self.cfg)
+        at.target_parameters = ['t_offset']
+        m = init_minuit(at, guess)
+        m.migrad(ncall=100)
+
+        guess = update_guess(m)
+        at = AllSamples(self.nfits, BasicParams, self.cfg)
         at.target_parameters = ['t_offset']
         m = init_minuit(at, guess)
 
@@ -1060,14 +1088,14 @@ class FitProcedure:
         m.fixed = True
         m.fixed['Xmax'] = False
         m.fixed['Nmax'] = False
-        # m.fixed['zenith'] = False
-        # m.fixed['azimuth'] = False
+        m.fixed['zenith'] = False
+        m.fixed['azimuth'] = False
         m.fixed['corex'] = False
         m.fixed['corey'] = False
-        m.fixed['X0'] = False
-        m.fixed['Lambda'] = False
+        # m.fixed['X0'] = False
+        # m.fixed['Lambda'] = False
         m.fixed['t_offset'] = False
-        m.simplex()
+        m.simplex(ncall=400)
 
         self.chi2ndof = at.chi2(np.array([p.value for p in m.params]))/m.ndof
 
@@ -1081,7 +1109,6 @@ class FitProcedure:
         pt = PeakTimes(self.nfits, BasicParams, self.cfg)
         pt.target_parameters = ['zenith','azimuth']
         m = init_minuit(pt, guess)
-        m.tol = .1
         m.simplex()
 
         # guess = update_guess_values(guess, m)
@@ -1097,7 +1124,7 @@ class FitProcedure:
         # m.simplex(ncall=20)
 
         guess = update_guess_values(guess, m)
-        pa = NormalizedPulseArea(self.nfits, BasicParams, self.cfg)
+        pa = PulseArea(self.nfits, BasicParams, self.cfg)
         pa.target_parameters = ['Xmax','Nmax','corex','corey']
         m = init_minuit(pa, guess)
         m.simplex()
@@ -1141,13 +1168,13 @@ def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 6) -> pd.DataFrame:
     dictlist = []
 
     #loop throw events in input dataframe
-    for _, row in df.iterrows():
+    for ev_no, row in df.iterrows():
         cfg = row['config']
         new_row = empty_row(cfg)
         new_row['chi2'] = None
         nfits = row[cfg.active_counters][row[cfg.active_counters].notna()].to_list()
         #exclude weird counters
-        #nfits = [f for f in nfits if f.name not in ['bardeen','bell','curie','rubin']]
+        # nfits = [f for f in nfits if f.name not in ['bell','curie','rubin']]
         for nfit in nfits:
             new_row[nfit.name] = nfit
 
@@ -1164,13 +1191,15 @@ def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 6) -> pd.DataFrame:
         #fit if there are at least the requested number of triggered counters
         if len(nfits) >= min_multiplicity:
             fp = FitProcedure(cfg,nfits)
+            # guess = fp.fit_procedure(make_guess(row['Fit'],row['Plane_Fit'],cfg))
             guess = make_guess(row['Fit'],row['Plane_Fit'],cfg)
             tries = 0
             #fit until chi2 is less than 100
-            while fp.chi2ndof > 100. and tries < 2:
+            while fp.chi2ndof > 100. and tries < 1:
                 try:
-                    guess = fp.fit_procedure(guess)
+                    guess = fp.minimal_fit_procedure(guess)
                     tries += 1
+                    print(f'try #{tries}')
                 except:
                     dictlist.append(new_row)
                     continue
@@ -1187,7 +1216,6 @@ def dataframe_fit(df: pd.DataFrame, min_multiplicity: int = 6) -> pd.DataFrame:
 
     #Estimate Es from Nmaxs
     if fit_df.Nmax.any():
-        #print('has nmax')
         E_estimates = E(fit_df.Nmax.to_numpy())
         fit_df.E = E_estimates
     return pd.DataFrame(dictlist)
@@ -1203,7 +1231,9 @@ if __name__ == '__main__':
     mc_to_fit = [p for p in all_mc_df_paths if p.name not in already_fit_names]
     ev_df_pkl = mc_to_fit[fileid]
     print('Reconstructing ' + ev_df_pkl.name)
+    target_path = ev_df_pkl.parent / f'fit_{ev_df_pkl.name}'
+    target_path.touch()
     df = pd.read_pickle(ev_df_pkl)
     fit_df = dataframe_fit(df)
-    save_df(fit_df,'fit_' + ev_df_pkl.name, ev_df_pkl.parent)
+    fit_df.to_pickle(target_path)
 

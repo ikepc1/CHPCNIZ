@@ -27,14 +27,14 @@ TEL_RADII = .0508
 
 #MC Parameters
 N_ENERGY_BINS = 1
-MIN_LE = 14.
+MIN_LE = 15.
 MAX_LE = 17.
 SPECTRUM = -2
 E_BIN_EDGES = np.linspace(MIN_LE,MAX_LE,N_ENERGY_BINS+1)
 E_BINS = E_BIN_EDGES[:-1] + np.diff(E_BIN_EDGES)/2
 N_THROWN = 60
-N_THROWN_PER_NS_EVENT = 80
-THROW_RADIUS = 400. #meters per 10^12
+N_THROWN_PER_NS_EVENT = 25
+THROW_RADIUS = 200. #meters per 10^12
 SHOWLIB_DRAWER_SIZE = 512
 
 #CHASM inputs
@@ -43,6 +43,20 @@ MAX_WAVELENGTH = 450.
 N_WAVELENGTH_BINS = 1
 CHASM_MESH = True
 
+#Fit parameter limits
+XMAX_LOWER_LIMIT = 3.8e2
+XMAX_UPPER_LIMIT = 1.1e3
+NMAX_LOWER_LIMIT = 3.e5
+NMAX_UPPER_LIMIT = 1.e8
+LAMBDA_LOWER_LIMIT = 4.e1
+LAMBDA_UPPER_LIMIT = 1.e2
+X0_LOWER_LIMIT = -1.e3
+X0_UPPER_LIMIT = 1.e3
+
+#Fit parameter guesses
+XMAX_GUESS = 5.5e2
+LAMBDA_GUESS = 7.e1
+X0_GUESS = 0.
 
 '''counter properties'''
 ACTIVE_COUNTERS = {'curie':     True,
@@ -192,14 +206,14 @@ COUNTER_FADC_PER_PE =  {'curie':     1., # number of fadc counts per PE
 #                            'rossi': 5.1908236939723436,
 #                            'rubin': 5.783684658654795}
 
-COUNTER_FADC_PER_PHOTON = {'bardeen': 0.4301294450523357,
- 'bell': 1.4639139998316604,
- 'curie': 1.8795107279931322,
- 'feynman': 1.5014120362528374,
- 'newton': 2.182147680064487,
- 'noether': 1.8765021501429047,
- 'rossi': 1.0044919895844284,
- 'rubin': 1.131329751694293}
+COUNTER_FADC_PER_PHOTON = {'bardeen': 0.06580345317263095,
+ 'bell': 0.2239572236793986,
+ 'curie': 0.2875373857790766,
+ 'feynman': 0.2296938695009984,
+ 'newton': 0.3338363702662049,
+ 'noether': 0.28707711779705186,
+ 'rossi': 0.15367244060880156,
+ 'rubin': 0.17307674513973698}
 
 COUNTER_NOISE_LEVEL = {'bardeen': 4.44597979813936,
                        'bell': 36.87722110836859,
@@ -211,8 +225,8 @@ COUNTER_NOISE_LEVEL = {'bardeen': 4.44597979813936,
                        'rubin': 14.682870253902644,
                        }
 # NSBG = 242.9651726980374
-NSBG = 7965.114197731613
-
+# NSBG = 7965.114197731613
+NSBG = 338482.35443429323
 # COUNTER_FADC_PER_PE =  {'curie':     2., # number of fadc counts per PE
 #                         'dirac':     2.,
 #                         'einstein':  2.,
